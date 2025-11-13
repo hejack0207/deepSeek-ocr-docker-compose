@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip \
     # Actualizar pip en la misma capa
-    && pip install --upgrade pip setuptools wheel
+    && pip install --upgrade -i https://pypi.tuna.tsinghua.edu.cn/simple pip setuptools wheel \
+    && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Directorio de trabajo
 WORKDIR /app
