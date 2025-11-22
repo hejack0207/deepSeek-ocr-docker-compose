@@ -1,22 +1,27 @@
 services:
   deepseek-ocr-api:
+    # image: deepseek-ocr-api
     build:
       context: ./backend
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
     container_name: deepseek-ocr-api
+    runtime: nvidia
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
-      - model_cache:/root/.cache/huggingface
+      - ./models:/root/.cache/huggingface
     environment:
       - CUDA_VISIBLE_DEVICES=0
       - HF_HOME=/root/.cache/huggingface
       - MODEL_NAME=deepseek-ai/DeepSeek-OCR
+      - BASE_SIZE=512
+      - IMAGE_SIZE=512
+      - HF_ENDPOINT=https://hf-mirror.com
     deploy:
       resources:
         reservations:

@@ -17,14 +17,14 @@ from huggingface_hub import snapshot_download
 
 from config import settings, PROMPTS
 
-# Configurar logging
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Crear app FastAPI
+# Create FastAPI app
 app = FastAPI(
     title="DeepSeek OCR API",
-    description="API para reconocimiento óptico de caracteres usando DeepSeek-OCR",
+    description="API for optical character recognition using DeepSeek-OCR",
     version="1.0.0"
 )
 
@@ -37,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Variables globales para el modelo
+    # Global variables for the model
 model = None
 tokenizer = None
 model_loaded = False
@@ -47,7 +47,7 @@ download_progress = {"status": "idle", "progress": 0, "message": ""}
 
 
 def load_model():
-    """Carga el modelo DeepSeek-OCR"""
+    """Load the DeepSeek-OCR model"""
     global model, tokenizer, model_loaded, model_loading, model_error, download_progress
     
     if model_loaded:
@@ -60,13 +60,13 @@ def load_model():
     model_error = None
     download_progress["status"] = "downloading"
     download_progress["progress"] = 0
-    download_progress["message"] = "Iniciando descarga del modelo..."
+    download_progress["message"] = "Starting model download..."
     
     try:
-        logger.info(f"Cargando modelo {settings.MODEL_NAME}...")
+        logger.info(f"Loading model {settings.MODEL_NAME}...")
         
         download_progress["progress"] = 10
-        download_progress["message"] = "Descargando tokenizer..."
+        download_progress["message"] = "Downloading tokenizer..."
         
         tokenizer = AutoTokenizer.from_pretrained(
             settings.MODEL_NAME,
@@ -74,51 +74,51 @@ def load_model():
         )
         
         download_progress["progress"] = 30
-        download_progress["message"] = "Tokenizer descargado. Descargando modelo..."
+        download_progress["message"] = "Tokenizer downloaded. Downloading model..."
         
-        # Intentar primero con flash_attention_2, sino usar eager
+        # Try first with flash_attention_2, otherwise use eager
         try:
-            logger.info("Intentando cargar con flash_attention_2...")
-            download_progress["message"] = "Cargando modelo con flash_attention_2..."
+            logger.info("Attempting to load with flash_attention_2...")
+            download_progress["message"] = "Loading model with flash_attention_2..."
             model = AutoModel.from_pretrained(
                 settings.MODEL_NAME,
                 _attn_implementation='flash_attention_2',
                 trust_remote_code=True,
                 use_safetensors=True
             )
-            logger.info("✓ Modelo cargado con flash_attention_2")
+            logger.info("✓ Model loaded with flash_attention_2")
         except Exception as e:
-            logger.warning(f"Flash attention no disponible: {e}")
-            logger.info("Cargando modelo con eager attention...")
-            download_progress["message"] = "Cargando modelo con eager attention..."
+            logger.warning(f"Flash attention not available: {e}")
+            logger.info("Loading model with eager attention...")
+            download_progress["message"] = "Loading model with eager attention..."
             model = AutoModel.from_pretrained(
                 settings.MODEL_NAME,
                 _attn_implementation='eager',
                 trust_remote_code=True,
                 use_safetensors=True
             )
-            logger.info("✓ Modelo cargado con eager attention")
+            logger.info("✓ Model loaded with eager attention")
         
         download_progress["progress"] = 80
-        download_progress["message"] = "Modelo descargado. Configurando..."
+        download_progress["message"] = "Model downloaded. Configuring..."
         
-        # Mover a GPU si está disponible
+        # Move to GPU if available
         if settings.DEVICE == "cuda" and torch.cuda.is_available():
-            logger.info("Moviendo modelo a GPU...")
-            download_progress["message"] = "Moviendo modelo a GPU..."
+            logger.info("Moving model to GPU...")
+            download_progress["message"] = "Moving model to GPU..."
             model = model.eval().cuda().to(torch.bfloat16)
-            logger.info(f"✓ Modelo cargado en GPU: {torch.cuda.get_device_name(0)}")
+            logger.info(f"✓ Model loaded on GPU: {torch.cuda.get_device_name(0)}")
         else:
             model = model.eval()
-            logger.info("✓ Modelo cargado en CPU")
+            logger.info("✓ Model loaded on CPU")
         
         download_progress["progress"] = 100
         download_progress["status"] = "completed"
-        download_progress["message"] = "✓ Modelo completamente cargado y listo"
+        download_progress["message"] = "✓ Model fully loaded and ready"
         
         model_loaded = True
         model_loading = False
-        logger.info("✓ Modelo completamente cargado y listo")
+        logger.info("✓ Model fully loaded and ready")
         
     except Exception as e:
         model_loading = False
@@ -126,21 +126,21 @@ def load_model():
         download_progress["status"] = "error"
         download_progress["progress"] = 0
         download_progress["message"] = f"Error: {str(e)}"
-        logger.error(f"Error al cargar modelo: {str(e)}")
+        logger.error(f"Error loading model: {str(e)}")
         raise
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Inicialización al arrancar la aplicación"""
-    logger.info("Iniciando DeepSeek OCR API...")
+    """Initialization when starting the application"""
+    logger.info("Starting DeepSeek OCR API...")
     
-    # Crear directorios
+    # Create directories
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
     
-    # NO cargar modelo en startup - se cargará en la primera petición
-    logger.info("✓ API lista. El modelo se cargará en la primera petición.")
+    # DO NOT load model on startup - it will be loaded on the first request
+    logger.info("✓ API ready. The model will be loaded on the first request.")
 
 
 @app.get("/")
@@ -177,24 +177,24 @@ async def health_check():
 
 @app.post("/api/download-model")
 async def download_model(background_tasks: BackgroundTasks):
-    """Inicia la descarga del modelo en background"""
+    """Starts downloading the model in the background"""
     global model_loading, download_progress
     
     if model_loaded:
-        return {"status": "already_loaded", "message": "Modelo ya cargado"}
+        return {"status": "already_loaded", "message": "Model already loaded"}
     
     if model_loading:
-        return {"status": "downloading", "message": "Descarga en progreso", "progress": download_progress}
+        return {"status": "downloading", "message": "Download in progress", "progress": download_progress}
     
-    # Iniciar carga en background
+    # Start loading in background
     background_tasks.add_task(load_model)
     
-    return {"status": "started", "message": "Descarga iniciada"}
+    return {"status": "started", "message": "Download started"}
 
 
 @app.get("/api/download-progress")
 async def get_download_progress():
-    """Obtiene el progreso de descarga del modelo"""
+    """Gets the model download progress"""
     return {
         "model_loaded": model_loaded,
         "model_loading": model_loading,
@@ -209,33 +209,33 @@ async def process_ocr(
     custom_prompt: Optional[str] = Form(None)
 ):
     """
-    Procesa una imagen y extrae texto usando OCR
+    Process an image and extract text using OCR
     
     Args:
-        file: Imagen a procesar (JPG, PNG, PDF, WEBP)
-        mode: Modo de procesamiento predefinido
-        custom_prompt: Prompt personalizado (opcional, sobrescribe mode)
+        file: Image to process (JPG, PNG, PDF, WEBP)
+        mode: Predefined processing mode
+        custom_prompt: Custom prompt (optional, overrides mode)
     
     Returns:
-        JSON con el texto extraído y metadata
+        JSON with extracted text and metadata
     """
     
-    # Verificar que el modelo esté cargado
+    # Check if model is loaded
     if not model_loaded:
         try:
             load_model()
         except Exception as e:
             raise HTTPException(
                 status_code=503,
-                detail=f"Modelo no disponible: {str(e)}"
+                detail=f"Model not available: {str(e)}"
             )
     
-    # Validar archivo
+    # Validate file
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Tipo de archivo no permitido. Usar: {settings.ALLOWED_EXTENSIONS}"
+            detail=f"File type not allowed. Use: {settings.ALLOWED_EXTENSIONS}"
         )
     
     # Generar nombres únicos
@@ -244,20 +244,20 @@ async def process_ocr(
     upload_path = os.path.join(settings.UPLOAD_DIR, unique_id)
     
     try:
-        # Guardar archivo subido
+        # Save uploaded file
         with open(upload_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Validar tamaño
+        # Validate size
         file_size = os.path.getsize(upload_path)
         if file_size > settings.MAX_FILE_SIZE:
             os.remove(upload_path)
             raise HTTPException(
                 status_code=400,
-                detail=f"Archivo muy grande. Máximo: {settings.MAX_FILE_SIZE / 1024 / 1024}MB"
+                detail=f"File too large. Maximum: {settings.MAX_FILE_SIZE / 1024 / 1024}MB"
             )
         
-        # Validar que sea imagen válida
+        # Validate that it's a valid image
         try:
             img = Image.open(upload_path)
             img_size = img.size
@@ -266,25 +266,25 @@ async def process_ocr(
             os.remove(upload_path)
             raise HTTPException(
                 status_code=400,
-                detail=f"Archivo no es una imagen válida: {str(e)}"
+                detail=f"File is not a valid image: {str(e)}"
             )
         
-        # Determinar prompt
+        # Determine prompt
         prompt = custom_prompt if custom_prompt else PROMPTS.get(mode, PROMPTS["markdown"])
         
-        # Crear directorio de salida único
+        # Create unique output directory
         output_dir = os.path.join(settings.OUTPUT_DIR, timestamp)
         os.makedirs(output_dir, exist_ok=True)
         
-        # Procesar imagen con el modelo
-        logger.info(f"Procesando {unique_id} con modo '{mode}'")
+        # Process image with the model
+        logger.info(f"Processing {unique_id} with mode '{mode}'")
         start_time = time.time()
         
-        # Verificar que el modelo esté cargado correctamente
+        # Check if the model is loaded correctly
         if model is None or tokenizer is None:
             raise HTTPException(
                 status_code=503,
-                detail="Modelo no inicializado correctamente"
+                detail="Model not initialized properly"
             )
         
         result = model.infer(
@@ -300,7 +300,7 @@ async def process_ocr(
         )
         
         processing_time = time.time() - start_time
-        logger.info(f"✓ Procesado en {processing_time:.2f}s")
+        logger.info(f"✓ Processed in {processing_time:.2f}s")
         
         # Leer resultado
         result_file = os.path.join(output_dir, "result.mmd")
@@ -333,45 +333,45 @@ async def process_ocr(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error procesando imagen: {str(e)}")
-        # Limpiar archivos en caso de error
+        logger.error(f"Error processing image: {str(e)}")
+        # Clean up files in case of error
         if os.path.exists(upload_path):
             os.remove(upload_path)
         raise HTTPException(
             status_code=500,
-            detail=f"Error procesando imagen: {str(e)}"
+            detail=f"Error processing image: {str(e)}"
         )
 
 
 @app.get("/api/modes")
 async def get_modes():
-    """Retorna los modos de OCR disponibles"""
+    """Returns the available OCR modes"""
     return {
         "modes": {
             "free_ocr": {
-                "description": "OCR rápido sin estructura",
-                "speed": "⚡⚡⚡ Rápido",
-                "use_case": "Extracción de texto general"
+                "description": "OCR fast without structure",
+                "speed": "⚡⚡⚡ Fast",
+                "use_case": "General text extraction"
             },
             "markdown": {
-                "description": "Convierte documento a Markdown con estructura",
-                "speed": "⚡⚡ Medio",
-                "use_case": "Documentos con formato"
+                "description": "Converts document to Markdown with structure",
+                "speed": "⚡⚡ Medium",
+                "use_case": "Formatted documents"
             },
             "grounding": {
-                "description": "OCR con coordenadas de bounding boxes",
-                "speed": "⚡ Lento",
-                "use_case": "Análisis detallado con ubicaciones"
+                "description": "OCR with bounding box coordinates",
+                "speed": "⚡ Slow",
+                "use_case": "Detailed analysis with locations"
             },
             "parse_figure": {
-                "description": "Extrae información de figuras y diagramas",
-                "speed": "⚡⚡ Medio",
-                "use_case": "Gráficos, tablas, diagramas"
+                "description": "Extracts information from figures and diagrams",
+                "speed": "⚡⚡ Medium",
+                "use_case": "Graphics, tables, diagrams"
             },
             "detailed": {
-                "description": "Descripción detallada de la imagen",
-                "speed": "⚡⚡⚡ Muy rápido",
-                "use_case": "Análisis de contenido visual"
+                "description": "Detailed description of the image",
+                "speed": "⚡⚡⚡ Very fast",
+                "use_case": "Visual content analysis"
             }
         }
     }
@@ -379,7 +379,7 @@ async def get_modes():
 
 @app.delete("/api/cleanup")
 async def cleanup_old_files(days: int = 7):
-    """Limpia archivos antiguos"""
+    """Clean up old files"""
     try:
         import time
         current_time = time.time()
@@ -387,13 +387,13 @@ async def cleanup_old_files(days: int = 7):
         
         cleaned = {"uploads": 0, "outputs": 0}
         
-        # Limpiar uploads
+        # Clean up uploads
         for file in Path(settings.UPLOAD_DIR).iterdir():
             if current_time - file.stat().st_mtime > days_in_seconds:
                 file.unlink()
                 cleaned["uploads"] += 1
         
-        # Limpiar outputs
+        # Clean up outputs
         for folder in Path(settings.OUTPUT_DIR).iterdir():
             if folder.is_dir() and current_time - folder.stat().st_mtime > days_in_seconds:
                 shutil.rmtree(folder)

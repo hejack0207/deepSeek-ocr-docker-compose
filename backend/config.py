@@ -4,16 +4,16 @@ from typing import Literal
 
 
 class Settings(BaseSettings):
-    """Configuración de la aplicación"""
+    """Application configuration"""
     
-    # Modelo
+    # Model
     MODEL_NAME: str = os.getenv("MODEL_NAME", "deepseek-ai/DeepSeek-OCR")
     
-    # Rutas
+    # Paths
     UPLOAD_DIR: str = "/app/uploads"
     OUTPUT_DIR: str = "/app/outputs"
     
-    # Configuración de imagen
+    # Image configuration
     BASE_SIZE: int = int(os.getenv("BASE_SIZE", "1024"))
     IMAGE_SIZE: int = int(os.getenv("IMAGE_SIZE", "640"))
     CROP_MODE: bool = True
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 
-# Prompts predefinidos
+# Predefined prompts
 PROMPTS = {
     "free_ocr": "<image>\nFree OCR. ",
     "markdown": "<image>\n<|grounding|>Convert the document to markdown. ",

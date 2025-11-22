@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script de prueba para el API de DeepSeek OCR
+Test script for DeepSeek OCR API
 """
 
 import requests
@@ -13,52 +13,52 @@ API_URL = "http://localhost:8000"
 
 
 def test_health():
-    """Verificar salud del API"""
-    print("🏥 Verificando salud del API...")
+    """Check API health"""
+    print("🏥 Checking API health...")
     try:
         response = requests.get(f"{API_URL}/health", timeout=5)
         data = response.json()
         
         if data.get("status") == "healthy":
-            print("✅ API está saludable")
-            print(f"   - Modelo cargado: {data.get('model_loaded')}")
+            print("✅ API is healthy")
+            print(f"   - Model loaded: {data.get('model_loaded')}")
             print(f"   - Device: {data.get('device')}")
-            print(f"   - CUDA disponible: {data.get('cuda_available')}")
+            print(f"   - CUDA available: {data.get('cuda_available')}")
             return True
         else:
-            print("❌ API no está saludable")
+            print("❌ API is not healthy")
             return False
     except Exception as e:
-        print(f"❌ Error conectando al API: {e}")
+        print(f"❌ Error connecting to API: {e}")
         return False
 
 
 def test_modes():
-    """Obtener modos disponibles"""
-    print("\n📋 Obteniendo modos disponibles...")
+    """Get available modes"""
+    print("\n📋 Getting available modes...")
     try:
         response = requests.get(f"{API_URL}/api/modes", timeout=5)
         modes = response.json()
         
-        print("✅ Modos disponibles:")
+        print("✅ Available modes:")
         for mode, info in modes.get("modes", {}).items():
             print(f"\n   {mode}:")
             print(f"   - {info['description']}")
-            print(f"   - Velocidad: {info['speed']}")
-            print(f"   - Uso: {info['use_case']}")
+            print(f"   - Speed: {info['speed']}")
+            print(f"   - Use case: {info['use_case']}")
         return True
     except Exception as e:
-        print(f"❌ Error obteniendo modos: {e}")
+        print(f"❌ Error getting modes: {e}")
         return False
 
 
 def test_ocr(image_path, mode="markdown"):
-    """Probar OCR con una imagen"""
-    print(f"\n🖼️  Probando OCR con imagen: {image_path}")
-    print(f"   Modo: {mode}")
+    """Test OCR with an image"""
+    print(f"\n\ud83d\udc50  Testing OCR with image: {image_path}")
+    print(f"   Mode: {mode}")
     
     if not Path(image_path).exists():
-        print(f"❌ Archivo no encontrado: {image_path}")
+        print(f"\u274c File not found: {image_path}")
         return False
     
     try:
@@ -66,40 +66,40 @@ def test_ocr(image_path, mode="markdown"):
             files = {'file': f}
             data = {'mode': mode}
             
-            print("   ⏳ Procesando...")
+            print("   \u23f3 Processing...")
             start = time.time()
             
             response = requests.post(
                 f"{API_URL}/api/ocr",
                 files=files,
                 data=data,
-                timeout=300  # 5 minutos máximo
+                timeout=300  # Maximum 5 minutes
             )
             
             elapsed = time.time() - start
             
             if response.ok:
                 result = response.json()
-                print(f"✅ OCR completado en {result['processing_time']}s")
-                print(f"   - Tamaño imagen: {result['image_size']}")
-                print(f"   - Modo usado: {result['mode']}")
-                print(f"\n   📄 Texto extraído (primeros 200 chars):")
+                print(f"\u2705 OCR completed in {result['processing_time']}s")
+                print(f"   - Image size: {result['image_size']}")
+                print(f"   - Mode used: {result['mode']}")
+                print(f"\n   \ud83d\udcc4 Extracted text (first 200 chars):")
                 print(f"   {result['text'][:200]}...")
                 return True
             else:
-                print(f"❌ Error en OCR: {response.status_code}")
+                print(f"\u274c OCR error: {response.status_code}")
                 print(f"   {response.text}")
                 return False
                 
     except Exception as e:
-        print(f"❌ Error procesando OCR: {e}")
+        print(f"\u274c Error processing OCR: {e}")
         return False
 
 
 def run_tests(image_path=None):
-    """Ejecutar todas las pruebas"""
+    """Run all tests"""
     print("=" * 60)
-    print("🧪 Iniciando pruebas de DeepSeek OCR API")
+    print("🧪 Starting DeepSeek OCR API tests")
     print("=" * 60)
     
     results = {}
@@ -108,23 +108,23 @@ def run_tests(image_path=None):
     results['health'] = test_health()
     
     if not results['health']:
-        print("\n❌ API no está disponible. Asegúrate de que esté corriendo:")
+        print("\n❌ API is not available. Make sure it's running:")
         print("   docker-compose up -d")
         return False
     
-    # Test 2: Modos
+    # Test 2: Modes
     results['modes'] = test_modes()
     
-    # Test 3: OCR (si se proporciona imagen)
+    # Test 3: OCR (if image is provided)
     if image_path:
         results['ocr'] = test_ocr(image_path)
     else:
-        print("\n⚠️  No se proporcionó imagen para prueba de OCR")
-        print("   Uso: python test_api.py <ruta_imagen>")
+        print("\n⚠️  No image provided for OCR test")
+        print("   Usage: python test_api.py <image_path>")
     
-    # Resumen
+    # Summary
     print("\n" + "=" * 60)
-    print("📊 Resumen de pruebas:")
+    print("📊 Test summary:")
     print("=" * 60)
     
     for test, passed in results.items():
@@ -134,9 +134,9 @@ def run_tests(image_path=None):
     all_passed = all(results.values())
     
     if all_passed:
-        print("\n🎉 Todas las pruebas pasaron exitosamente!")
+        print("\n🎉 All tests passed successfully!")
     else:
-        print("\n⚠️  Algunas pruebas fallaron. Revisa los logs arriba.")
+        print("\n⚠️  Some tests failed. Check the logs above.")
     
     return all_passed
 

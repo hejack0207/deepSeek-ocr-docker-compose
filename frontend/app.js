@@ -41,20 +41,20 @@ async function checkApiHealth() {
             statusIndicator.classList.remove('offline');
             statusIndicator.classList.add('online');
             
-            // Mostrar estado del modelo
+            // Show model status
             if (data.model_loaded) {
                 statusIndicator.classList.remove('loading');
-                statusText.textContent = 'Modelo cargado ✓';
+                statusText.textContent = 'Model loaded ✓';
                 modelDownloadSection.classList.add('hidden');
                 demoModeSection.classList.add('hidden');
             } else if (data.model_loading) {
                 statusIndicator.classList.add('loading');
-                statusText.textContent = '⏳ Descargando/Cargando modelo...';
+                statusText.textContent = '⏳ Downloading/Loading model...';
                 modelDownloadSection.classList.remove('hidden');
                 downloadProgressContainer.classList.remove('hidden');
                 downloadModelBtn.classList.add('hidden');
                 
-                // Mostrar progreso si está disponible
+                // Show progress if available
                 if (data.download_progress) {
                     updateDownloadProgress(data.download_progress);
                 }
@@ -66,7 +66,7 @@ async function checkApiHealth() {
                 demoModeSection.classList.remove('hidden');
             } else {
                 statusIndicator.classList.remove('loading');
-                statusText.textContent = 'Modelo no descargado';
+                statusText.textContent = 'Model not downloaded';
                 modelDownloadSection.classList.remove('hidden');
                 downloadProgressContainer.classList.add('hidden');
                 downloadModelBtn.classList.remove('hidden');
@@ -75,12 +75,12 @@ async function checkApiHealth() {
         } else {
             statusIndicator.classList.remove('online', 'loading');
             statusIndicator.classList.add('offline');
-            statusText.textContent = 'API no disponible';
+            statusText.textContent = 'API not available';
         }
     } catch (error) {
         statusIndicator.classList.remove('online', 'loading');
         statusIndicator.classList.add('offline');
-        statusText.textContent = 'API desconectada';
+        statusText.textContent = 'API disconnected';
         console.error('Health check failed:', error);
     }
 }
@@ -89,7 +89,7 @@ async function checkApiHealth() {
 function updateDownloadProgress(progress) {
     if (progress.progress !== undefined) {
         downloadProgressBar.style.width = `${progress.progress}%`;
-        downloadProgressText.textContent = `${progress.progress}% - ${progress.message || 'Descargando...'}`;
+        downloadProgressText.textContent = `${progress.progress}% - ${progress.message || 'Downloading...'}`;
         
         if (progress.status === 'completed') {
             setTimeout(() => {
@@ -104,7 +104,7 @@ function updateDownloadProgress(progress) {
 async function startModelDownload() {
     try {
         downloadModelBtn.disabled = true;
-        downloadModelBtn.textContent = '⏳ Iniciando...';
+        downloadModelBtn.textContent = '⏳ Starting...';
         
         const response = await fetch(`${API_URL}/api/download-model`, {
             method: 'POST'
@@ -116,18 +116,18 @@ async function startModelDownload() {
             downloadProgressContainer.classList.remove('hidden');
             downloadModelBtn.classList.add('hidden');
             
-            // Iniciar polling del progreso
+            // Start progress polling
             startProgressPolling();
         } else if (data.status === 'already_loaded') {
-            showError('El modelo ya está cargado');
+            showError('The model is already loaded');
             downloadModelBtn.disabled = false;
-            downloadModelBtn.textContent = '📥 Descargar Modelo';
+            downloadModelBtn.textContent = '📥 Download Model';
         }
     } catch (error) {
         console.error('Download error:', error);
-        showError('Error al iniciar la descarga del modelo');
+        showError('Error starting model download');
         downloadModelBtn.disabled = false;
-        downloadModelBtn.textContent = '📥 Descargar Modelo';
+        downloadModelBtn.textContent = '📥 Download Model';
     }
 }
 
@@ -160,13 +160,13 @@ function startProgressPolling() {
 // Enable demo mode
 function enableDemoMode() {
     demoMode = true;
-    statusText.textContent = '🎮 Modo Demo Activado';
+    statusText.textContent = '🎮 Demo Mode Activated';
     statusIndicator.classList.remove('offline', 'loading', 'error');
     statusIndicator.classList.add('online');
     modelDownloadSection.classList.add('hidden');
     demoModeSection.classList.add('hidden');
     
-    alert('🎮 Modo Demo Activado\n\nPuedes probar la interfaz. Al procesar, se simulará un resultado de OCR.\n\nPara usar el OCR real, descarga el modelo.');
+    alert('🎮 Demo Mode Activated\n\nYou can test the interface. When processing, an OCR result will be simulated.\n\nTo use real OCR, download the model.');
 }
 
 // Setup event listeners
@@ -237,13 +237,13 @@ function handleFile(file) {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-        showError('Tipo de archivo no válido. Use JPG, PNG, WEBP o PDF.');
+        showError('Invalid file type. Use JPG, PNG, WEBP or PDF.');
         return;
     }
     
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-        showError('Archivo muy grande. Máximo 10MB.');
+        showError('File too large. Maximum 10MB.');
         return;
     }
     
@@ -288,23 +288,23 @@ async function processOCR() {
         return;
     }
     
-    // Verificar estado del modelo primero
+    // Check model status first
     try {
         const healthCheck = await fetch(`${API_URL}/health`);
         const healthData = await healthCheck.json();
         
         if (healthData.model_loading) {
-            showError('El modelo aún se está descargando/cargando. Por favor espera y verifica el progreso en la barra superior.');
+            showError('The model is still downloading/loading. Please wait and check the progress in the top bar.');
             return;
         }
         
         if (healthData.model_error) {
-            showError(`Error con el modelo: ${healthData.model_error}`);
+            showError(`Model error: ${healthData.model_error}`);
             return;
         }
         
         if (!healthData.model_loaded) {
-            showError('El modelo no está cargado. Por favor descarga el modelo primero o usa el Modo Demo.');
+            showError('The model is not loaded. Please download the model first or use Demo Mode.');
             return;
         }
     } catch (error) {
@@ -335,7 +335,7 @@ async function processOCR() {
         
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'Error procesando imagen');
+            throw new Error(error.detail || 'Error processing image');
         }
         
         const result = await response.json();
@@ -343,7 +343,7 @@ async function processOCR() {
         
     } catch (error) {
         console.error('OCR Error:', error);
-        showError(error.message || 'Error procesando la imagen. Intente nuevamente.');
+        showError(error.message || 'Error processing the image. Please try again.');
     } finally {
         loadingSection.classList.add('hidden');
         processBtn.disabled = false;
@@ -364,25 +364,25 @@ function processDemoOCR() {
     setTimeout(() => {
         const demoResult = {
             success: true,
-            text: `🎮 MODO DEMO - Resultado Simulado
+            text: `🎮 DEMO MODE - Simulated Result
 
-Esto es una simulación de OCR.
-El texto real se extraería de tu imagen usando el modelo DeepSeek-OCR.
+This is an OCR simulation.
+The actual text would be extracted from your image using the DeepSeek-OCR model.
 
-Archivo: ${selectedFile.name}
-Modo seleccionado: ${modeSelect.value}
+File: ${selectedFile.name}
+Selected mode: ${modeSelect.value}
 
-Para obtener resultados reales:
-1. Descarga el modelo usando el botón en la parte superior
-2. Espera a que se complete la descarga
-3. Procesa tu imagen nuevamente
+To get real results:
+1. Download the model using the button at the top
+2. Wait for the download to complete
+3. Process your image again
 
-Características del OCR real:
-- Reconocimiento de texto preciso
-- Soporte para múltiples idiomas
-- Conversión a Markdown
-- Extracción de coordenadas
-- Análisis de figuras y gráficos`,
+Features of real OCR:
+- Accurate text recognition
+- Support for multiple languages
+- Conversion to Markdown
+- Coordinate extraction
+- Figure and chart analysis`,
             processing_time: 2.5,
             mode: modeSelect.value,
             image_size: [800, 600],
@@ -404,7 +404,7 @@ function displayResults(data) {
         `${data.image_size[0]} × ${data.image_size[1]}`;
     
     // Update text
-    document.getElementById('resultText').textContent = data.text || 'Sin resultados';
+    document.getElementById('resultText').textContent = data.text || 'No results';
     
     // Show results
     resultsSection.classList.remove('hidden');
@@ -420,13 +420,13 @@ async function copyResult() {
         await navigator.clipboard.writeText(text);
         const btn = document.getElementById('copyBtn');
         const originalText = btn.textContent;
-        btn.textContent = '✓ Copiado';
+        btn.textContent = '✓ Copied';
         setTimeout(() => {
             btn.textContent = originalText;
         }, 2000);
     } catch (error) {
         console.error('Copy failed:', error);
-        alert('No se pudo copiar al portapapeles');
+        alert('Could not copy to clipboard');
     }
 }
 
