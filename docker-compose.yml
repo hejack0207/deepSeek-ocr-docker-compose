@@ -1,6 +1,6 @@
 services:
   deepseek-ocr-api:
-    # image: deepseek-ocr-api
+    image: deepseekocr-img2txt-api:transformer-cuda118
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -37,12 +37,13 @@ services:
       retries: 3
 
   deepseek-ocr-web:
+    image: deepseekocr-img2txt-web
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: deepseek-ocr-web
     ports:
-      - "3000:80"
+      - "3080:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
     depends_on:
