@@ -84,6 +84,7 @@ def load_model():
                 settings.MODEL_NAME,
                 _attn_implementation='flash_attention_2',
                 trust_remote_code=True,
+                device_map='auto',
                 use_safetensors=True
             )
             logger.info("✓ Model loaded with flash_attention_2")
@@ -106,7 +107,8 @@ def load_model():
         if settings.DEVICE == "cuda" and torch.cuda.is_available():
             logger.info("Moving model to GPU...")
             download_progress["message"] = "Moving model to GPU..."
-            model = model.eval().cuda().to(torch.bfloat16)
+            # model = model.eval().cuda().to(torch.bfloat16)
+            model = model.eval().cuda().to(torch.float16)
             logger.info(f"✓ Model loaded on GPU: {torch.cuda.get_device_name(0)}")
         else:
             model = model.eval()

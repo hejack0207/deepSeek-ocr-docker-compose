@@ -16,7 +16,7 @@ services:
       - ./outputs:/app/outputs
       - ./models:/root/.cache/huggingface
     environment:
-      - CUDA_VISIBLE_DEVICES=0
+      # - CUDA_VISIBLE_DEVICES=0
       - HF_HOME=/root/.cache/huggingface
       - MODEL_NAME=deepseek-ai/DeepSeek-OCR
       - BASE_SIZE=512
