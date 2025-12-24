@@ -37,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-    # Global variables for the model
+# Global variables for the model
 model = None
 tokenizer = None
 model_loaded = False
@@ -85,6 +85,7 @@ def load_model():
                 _attn_implementation='flash_attention_2',
                 trust_remote_code=True,
                 device_map='auto',
+                max_memory={'cuda:0': '4GB'},
                 use_safetensors=True
             )
             logger.info("✓ Model loaded with flash_attention_2")
